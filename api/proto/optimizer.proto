@@ -1,0 +1,90 @@
+syntax = "proto3";
+
+package noytech.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "noytech-ga-optimizer/api/proto";
+
+service OptimizerService {
+  rpc Optimize(OptimizeRequest) returns (OptimizeResponse);
+}
+
+message OptimizeRequest {
+  string direction = 1; // Направление: "Восток", "Северо-Запад", "Юг", "Волга"
+
+  // Параметры ГА для 1-го уровня (выбор терминалов)
+  GASettings ga_settings_level_1 = 2;
+
+  // Дни отгрузки (ровно 2)
+  repeated string delivery_days = 3;
+}
+
+message GASettings {
+  int32 num_generations = 1; // Количество поколений
+  int32 num_individuals = 2; // Количество индивидов (размер популяции)
+  SelectionType selection_type = 3; // Тип селекции
+  CrossoverType crossover_type = 4; // Тип скрещивания
+  MutationType mutation_type = 5;   // Тип мутации
+  int32 stopping_criterion = 6;    // Критерий остановки
+}
+
+enum SelectionType {
+  SELECTION_UNSPECIFIED = 0; 
+  SELECTION_TOURNAMENT = 1;  // Турнирная
+  SELECTION_ROULETTE = 2;    // Рулетка
+  SELECTION_RANK = 3;        // Ранговая
+}
+
+enum CrossoverType {
+  CROSSOVER_UNSPECIFIED = 0; 
+  CROSSOVER_UNIFORM = 1;     // Равномерный
+  CROSSOVER_SINGLE_POINT = 2; // Одноточечный
+  CROSSOVER_TWO_POINT = 3;   // Двухточечный
+}
+
+enum MutationType {
+  MUTATION_UNSPECIFIED = 0;
+  MUTATION_INVERSION = 1;   // Инверсивная
+  MUTATION_SWAP = 2;        // Перестановка 
+}
+
+message OptimizeResponse {
+  bool success = 1;
+  string message = 2;
+  repeated OptimizationResult results = 3; 
+  string solution_id = 4; 
+  google.protobuf.Timestamp created_at = 5; 
+}
+
+message OptimizationResult {
+  repeated Route routes = 1; // Маршруты (линейхолы)
+  CostBreakdown cost = 2;    // Общая стоимость
+  repeated string active_terminals = 3; // Активные терминалы (города)
+  int32 generation = 4;      // Поколение, на котором найдено решение
+  double fitness_score = 5;  // Значение функции пригодности (целевая функция)
+}
+
+message Route {
+  string from_city = 1;      // Москва
+  string to_terminal = 2;    // Терминал (город)
+  repeated string shipment_ids = 3; // ID грузов, назначенных на этот маршрут
+  double cost = 4;           // Стоимость этого лайнхола
+  TransportType transport_used = 5; // Использованный тип ТС
+}
+
+message CostBreakdown {
+  double linehaul_cost = 1; // Стоимость лайнхолов
+  double last_mile_cost = 2; // Стоимость последней мили
+  double penalty_cost = 3;  // Штрафы
+  double total_cost = 4;    // Общая стоимость
+}
+
+enum TransportType {
+  TRANSPORT_UNSPECIFIED = 0;
+  TRANSPORT_1_5T_10M3 = 1;  // 1.5т / 10м3
+  TRANSPORT_3T_20M3 = 2;    // 3т / 20м3
+  TRANSPORT_5T_36M3 = 3;    // 5т / 36м3
+  TRANSPORT_10T_45M3 = 4;   // 10т / 45м3
+  TRANSPORT_20T_86M3 = 5;   // 20т / 86м3
+}
