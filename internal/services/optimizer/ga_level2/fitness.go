@@ -1,7 +1,6 @@
 package ga_level2
 
 import (
-	"fmt"
 	"math"
 	"noytech-ga-optimizer/api/proto"
 	"noytech-ga-optimizer/internal/models"
@@ -18,6 +17,7 @@ func CalculateFitnessLevel2(
 	ind := &Individual{}
 
 	// 1. Распределение грузов по ближайшему терминалу
+	penalty := 0.0
 	terminalShipments := make(map[string][]models.Shipment)
 	for _, s := range shipments {
 		bestCity := ""
@@ -31,7 +31,8 @@ func CalculateFitnessLevel2(
 			}
 		}
 		if bestCity == "" {
-			return nil, fmt.Errorf("no terminal covers destination %s", s.DestinationCity)
+			penalty += 1e9
+			continue
 		}
 		terminalShipments[bestCity] = append(terminalShipments[bestCity], s)
 	}
@@ -58,7 +59,6 @@ func CalculateFitnessLevel2(
 	}
 
 	// 4. Штрафы и подбор ТС
-	penalty := 0.0
 	routes := make([]RouteWithShipments, 0)
 	for city, sList := range terminalShipments {
 		totalWeightTons := 0.0

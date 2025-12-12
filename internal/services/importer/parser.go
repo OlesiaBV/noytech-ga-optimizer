@@ -125,9 +125,18 @@ func parseAndLoadShipmentsAndTerminals(ctx context.Context, storage storage.Stor
 			continue
 		}
 
-		direction := strings.TrimSpace(row[2])
-		if direction == "" {
+		directionCode := strings.TrimSpace(row[2])
+		if directionCode == "" {
 			logger.Warn("Skipping terminal due to empty direction", "row_index", i, "city", city)
+			continue
+		}
+
+		directionName := getDirectionName(directionCode)
+		if directionName == "" {
+			logger.Warn("Unknown direction code, skipping terminal",
+				"row_index", i,
+				"city", city,
+				"direction_code", directionCode)
 			continue
 		}
 
@@ -144,7 +153,7 @@ func parseAndLoadShipmentsAndTerminals(ctx context.Context, storage storage.Stor
 
 		terminal := models.Terminal{
 			City:                 city,
-			Direction:            direction,
+			Direction:            directionName,
 			DistanceFromMoscowKm: distance,
 		}
 
@@ -447,4 +456,15 @@ func parseDate(dateStr string) (time.Time, error) {
 	}
 
 	return time.Time{}, fmt.Errorf("unable to parse date: %s", dateStr)
+}
+
+func getDirectionName(code string) string {
+	for _, config := range sheetConfigs {
+		for _, directionCode := range config.Directions {
+			if directionCode == code {
+				return config.Name
+			}
+		}
+	}
+	return ""
 }
